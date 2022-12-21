@@ -94,10 +94,10 @@ def main(stdscr): #stdscr specifies the default window
     is_authenticated = show_main_intro(stdscr)
     # If the user is already authenticated then go to main menu
     if is_authenticated == True:
-        print("Already Authenticated!")#Main_Menu(stdscr).show()
+        Main_Menu(stdscr).show()
     # Else show the login page
     else:
-        print("Login Please!")#LOGIN_UI(stdscr)
+        LOGIN_UI(stdscr)
 
 
 if __name__ == "__main__":
