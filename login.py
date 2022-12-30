@@ -105,7 +105,7 @@ class LOGIN_UI:
 
         if isPass:
 
-            ch = self.__stdscr.getch()
+            ch = self.__stdscr.getch() #getch() refreshes the screen and then waits for the user to hit a key
             password = password
             password_asterisk = "*" * len(password)
             editwin.insstr(password_asterisk)
@@ -134,3 +134,103 @@ class LOGIN_UI:
             box_email.edit()
             curses.curs_set(0)
             return box_email.gather()
+
+    def __main(self):
+        '''Main function which setups the whole login page'''
+
+        curses.curs_set(0)
+        self.__setup_layout("", "")
+        key = 1
+        email = ""
+        password = ""
+        utils.set_title(self.__stdscr, "LOGIN")
+        utils.show_status_message(
+            self.__stdscr, "Please read login instructions before logging in!!", time_to_show=2)
+        while key != ord('q'):
+            # If the key is e then make the email box active
+            if key == ord('e'):
+                email = self.__edit_box(
+                    email, "*" * len(password), self.__y_start + 1, self.__x_start + 2)
+
+            # If the key is p then make the password box active
+            elif key == ord('p'):
+                password = self.__edit_box(
+                    email, "*" * len(password), self.__y_start + 5, self.__x_start + 2, isPass=True)
+
+            elif key == ord('l'):
+                # Authenticate
+                self.__authenticate(email, password)
+
+            # Show login instructions
+            elif key == ord('i'):
+                Instructions(self.__stdscr)
+
+            # This is to refresh the layout when user resizes the terminal
+            self.__set_values()
+            self.__setup_layout(email, "*" * len(password))
+
+            self.__stdscr.refresh()
+            key = self.__stdscr.getch()
+        sys.exit()
+    
+    # Arguements:
+    # email: Email of user
+    # password: Password of user
+    
+    def __authenticate(self, email, password):
+        '''To Authenticate using IMAP Server'''
+
+        # Show the authenticating message
+        utils.show_status_message(
+            self.__stdscr, "Authenticating....", isLoading=True)
+        try:
+            email = email.strip()
+            password = password.strip()
+            self.__is_valid(email, password)
+            # Authenticate using email and password, it throws exception if something went wrong
+            IMAP(email, password)
+            # Store in .bashbird directory
+            cred = Credentials()
+            cred.store_credentials(email, password)
+            utils.show_status_message(
+                self.__stdscr, "Authentication Successful", time_to_show=1)
+            # Show main menu after authentication is completed
+            main_menu = Main_Menu(self.__stdscr)
+            main_menu.show()
+
+        except Exception as e:
+            utils.show_status_message(self.__stdscr, str(e), time_to_show=3)
+
+    # <!------------------------------------------------Utils------------------------------------------------->
+    def __is_valid(self, email, password):
+        '''Check if email and password are valid'''
+
+        if len(email.strip()) == 0 or len(password.strip()) == 0:
+            raise Exception("Please enter valid email and password")
+
+    '''To setup the default values'''
+
+    def __set_values(self):
+
+        # Set the value of height and width
+        self.__height, self.__width = self.__stdscr.getmaxyx()
+
+        # Starting x-coordinate
+        self.__x_start = self.__width // 2 - self.__noc // 2
+
+        # Ending x-coordinate
+        self.__x_end = self.__width // 2 + self.__noc // 2
+
+        # Starting y-coordinate
+        self.__y_start = self.__height // 2 - 3
+
+        # Ending y-coordinate
+        self.__y_end = self.__y_start + 9   
+
+
+def main(stdscr):
+    LOGIN_UI(stdscr)
+
+
+if __name__ == "__main__":
+    curses.wrapper(main)
